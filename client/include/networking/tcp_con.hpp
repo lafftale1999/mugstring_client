@@ -5,6 +5,7 @@
 #include <optional>
 #include <cerrno>
 #include <cstring>
+#include <string>
 
 #include <sys/socket.h>
 #include <sys/ioctl.h>
@@ -22,7 +23,6 @@ using byte_array = std::vector<char>;
 enum class L_TCP_SOCKET_RES {
     SUCCESSFUL_READ,
     SUCCESSFUL_SEND,
-    BUFFER_OVERFLOW,
     BLOCKING,
     CLIENT_CON_CLOSED,
     UNKNOWN_ERROR
@@ -32,6 +32,10 @@ enum class L_TCP_SOCKET_RES {
  * Reads up to dataSize bytes from the socket into dataOut.
  * dataOut is cleared before reading begins.
  *
+ * @param fd socket file descriptor
+ * @param dataOut byte_array to add data in
+ * @param dataSize maximum size of dataOut
+ * 
  * @return L_TCP_SOCKET_RES
  */
 L_TCP_SOCKET_RES readData(int fd, byte_array& dataOut, size_t dataSize);
@@ -39,6 +43,8 @@ L_TCP_SOCKET_RES readData(int fd, byte_array& dataOut, size_t dataSize);
 /**
  * Sends all of dataIn through the socket.
  *
+ * @param fd socket file descriptor
+ * @param dataIn byte_array of data to be sent
  * @return L_TCP_SOCKET_RES
  */
 L_TCP_SOCKET_RES sendData(int fd, const byte_array& dataIn);
@@ -58,9 +64,9 @@ public:
     ~ServerCon();
 
     /**
-     * Wraps accept() and returns a ClientCon on success.
+     * Wraps accept() and returns a Client on success.
      *
-     * @return optionally returns a ClientCon
+     * @return optionally returns a Client
      */
     std::optional<Client> acceptConnection();
 

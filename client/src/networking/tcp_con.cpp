@@ -1,4 +1,4 @@
-#include "../../include/http_server/tcp_con.hpp"
+#include "../../include/networking/tcp_con.hpp"
 
 #include <array>
 #include <algorithm>
@@ -63,7 +63,8 @@ L_TCP_SOCKET_RES sendData(int fd, const byte_array& dataIn) {
     return L_TCP_SOCKET_RES::SUCCESSFUL_SEND;
 }
 
-ServerCon::ServerCon(int port, size_t maxConnections) {
+ServerCon::ServerCon(int port, size_t maxConnections) 
+: socket_(-1), addr_(), port_(port), maxConnections_(maxConnections) {
     if (port <= 0) {
         throw std::runtime_error("Portnumber can't be less than 0");
     }
