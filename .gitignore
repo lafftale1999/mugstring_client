@@ -1,1 +1,3 @@
 buildroot*/*
+obj/*
+client/mugstring_client
