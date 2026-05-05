@@ -1,7 +1,9 @@
 #include "../../include/http_server/tcp_con.hpp"
+
 #include <array>
-#include <fcntl.h>
 #include <iterator>
+
+#include <fcntl.h>
 
 namespace networking::tcp {
 
@@ -32,7 +34,7 @@ void ConBase::setPort(int port) {
  */
 
 ClientCon::ClientCon(int s, sockaddr_in addr) {
-    if (socket <= 0) {
+    if (s <= 0) {
         throw std::runtime_error("Socket is not valid");
     }
 
@@ -50,7 +52,7 @@ ClientCon::~ClientCon() {}
 
 L_TCP_SOCKET_RES ClientCon::readData(byte_array& dataOut, size_t dataSize) {
     std::array<char, L_TCP_SOCKET_BUFFER_SIZE> buff;
-    ssize_t totalBytesRead = 0;
+    size_t totalBytesRead = 0;
 
     while (totalBytesRead < dataSize) {
         std::memset(buff.data(), 0, buff.size());
@@ -65,7 +67,7 @@ L_TCP_SOCKET_RES ClientCon::readData(byte_array& dataOut, size_t dataSize) {
             
         }
 
-        if ((bytesRead + totalBytesRead) < dataSize) {
+        if ((totalBytesRead + bytesRead) < dataSize) {
             if (bytesRead > 0) {
                 dataOut.insert(
                     dataOut.end(), 
@@ -106,6 +108,7 @@ L_TCP_SOCKET_RES ClientCon::sendData(const byte_array& dataIn) {
         if (bytesSent > 0) {
             totalBytesSent += bytesSent;
             pos += bytesSent;
+            toSend -= bytesSent;
         } else if (bytesSent == 0) {
             return L_TCP_SOCKET_RES::CLIENT_CON_CLOSED;
         } else {
@@ -128,25 +131,64 @@ const char* ClientCon::getIP() const {
  * ------------ SERVER SOCKET ------------
  */
 
-ServerCon::ServerCon(int port) {
+ServerCon::ServerCon(int port, size_t maxConnections) {
     if (port <= 0) {
         throw std::runtime_error("Invalid port numbers");
     }
 
     this->port_ = port;
+    this->maxConnections_ = maxConnections;
+
+    if (this->init() != 0) {
+        throw std::runtime_error("Failed to initialize server");
+    }
 }
 
 ServerCon::~ServerCon() {}
 
-std::optional<std::vector<ClientCon>> ServerCon::poll() {
-    std::vector<ClientCon> tmp_con;
+std::optional<ClientCon> ServerCon::acceptConnection() {
+    sockaddr_in clientAddress;
+    socklen_t clientSize = sizeof(clientAddress);
 
-    // poll server socket
-    // append client connections
+    int clientSocket = accept(this->socket_, (sockaddr *)&clientAddress, &clientSize);
+
+    if (clientSocket <= 0) {
+        std::cout << "Failed to accept incomming connection" << std::endl;
+        return std::nullopt;
+    }
+
+    return ClientCon(clientSocket, clientAddress);
 }
 
 uint8_t ServerCon::init() {
+    this->socket_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
+    if (this->socket_ < 0) {
+        std::cout << "Failed to create socket" << std::endl;
+        return 1;
+    }
+
+    int opt = 1;
+    if (setsockopt(this->socket_, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) != 0) {
+        std::cout << "Error when setting socket options: " << strerror(errno) << std::endl;
+        return 1;
+    }
+
+    addr_.sin_family = AF_INET;
+    addr_.sin_port = htons(port_);
+    addr_.sin_addr.s_addr = INADDR_ANY;
+
+    if (bind(this->socket_, (const sockaddr*)&(this->addr_), sizeof(this->addr_)) != 0) {
+        std::cout << "Failed to bind socket: " << strerror(errno) << std::endl;
+        return 1; 
+    }
+
+    if (listen(this->socket_, this->maxConnections_) != 0) {
+        std::cout << "Failed to start listen: " << strerror(errno) << std::endl;
+        return 1;
+    }
+
+    return 0;
 }
 
 }

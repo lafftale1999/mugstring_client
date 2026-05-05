@@ -4,14 +4,15 @@
 #include <iostream>
 #include <vector>
 #include <optional>
+#include <cerrno>
+#include <cstring>
 
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <cerrno>
-#include <cstring>
+#include <poll.h>
 
 namespace networking::tcp {
 
@@ -89,20 +90,31 @@ private:
     int             timeout_;
 };
 
+/**
+ * Class for server based logic
+ */
 class ServerCon : public ConBase {
 public:
-    ServerCon(int port);
+    ServerCon(int port, size_t maxConnections);
     virtual ~ServerCon() override;
 
     /**
-     * Polls the server socket until it returns a blocking signal.
+     * Wraps the accept() function and returns a instance of the ClientCon.
      * 
-     * @return optionally a vector of initialized `ClientCon`
+     * @return optionally returns a ClientCon when read properly
      */
-    std::optional<std::vector<ClientCon>> poll();
+    std::optional<ClientCon> acceptConnection();
 
 private:
+
+    /**
+     * Initializes the ServerCon
+     * 
+     * @return 0 on success, 1 on failure.
+     */
     uint8_t init();
+
+    size_t maxConnections_;
 };
 }
 

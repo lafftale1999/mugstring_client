@@ -1,8 +1,8 @@
 # Setting up our compiler flags and destinations
 PROG   = mugstring_client
 DST	   = ../filesystem-overlay/usr/local/sbin/
-CC     = arm-linux-gnueabihf-g++
-# CC	   = g++
+# CC     = arm-linux-gnueabihf-g++
+CC	   = g++
 CFLAGS = -g -std=c++17 -Wall -Werror
 LIBS   =
 
