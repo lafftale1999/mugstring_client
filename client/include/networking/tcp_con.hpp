@@ -14,7 +14,7 @@
 #include <unistd.h>
 #include <poll.h>
 
-namespace networking::tcp {
+namespace networking::http::tcp {
 
 static constexpr size_t TCP_BUFFER_SIZE = 2048;
 
@@ -52,7 +52,7 @@ L_TCP_SOCKET_RES sendData(int fd, const byte_array& dataIn);
 struct Client {
     int             fd;
     sockaddr_in     addr;
-    std::string     buff;
+    byte_array      buff;
 };
 
 /**
@@ -71,6 +71,7 @@ public:
     std::optional<Client> acceptConnection();
 
     int getPort() const;
+    int getSocket() const;
 
 private:
     /** Initializes the server socket. Throws std::runtime_error on failure. */

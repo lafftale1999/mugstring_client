@@ -7,7 +7,7 @@
 
 #include <fcntl.h>
 
-namespace networking::tcp {
+namespace networking::http::tcp {
 
 L_TCP_SOCKET_RES readData(int fd, byte_array& dataOut, size_t dataSize) {
     dataOut.clear();
@@ -99,7 +99,7 @@ std::optional<Client> ServerCon::acceptConnection() {
     Client client = {
         .fd = clientSocket,
         .addr = clientAddress,
-        .buff = std::string()
+        .buff = byte_array()
     };
 
     return client;
@@ -107,6 +107,10 @@ std::optional<Client> ServerCon::acceptConnection() {
 
 int ServerCon::getPort() const {
     return this->port_;
+}
+
+int ServerCon::getSocket() const {
+    return this->socket_;
 }
 
 void ServerCon::init() {
