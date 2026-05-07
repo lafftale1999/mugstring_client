@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <cstdint>
 #include <sstream>
+#include <initializer_list>
 
 namespace networking::http {
 
@@ -38,7 +39,10 @@ static inline const char* toString(const METHOD& m) {
 
 class Request {
 public:
+    Request() = default;
     Request(const std::vector<char>& rawRequest);
+
+    std::string createRequest();
 
     METHOD getMethod() const;
     const std::string& getPath() const;
@@ -48,9 +52,11 @@ public:
     const std::string& getRawRequest() const;
 
     void setMethod(const std::string& method);
+    void setMethod(const METHOD method);
     void setPath(std::string path);
     void setVersion(std::string version);
     void setHeader(std::string key, std::string value);
+    void addHeaders(std::initializer_list<std::pair<std::string, std::string>> headers);
     void setBody(const std::string& body);
 
 private:
@@ -65,6 +71,10 @@ private:
     void parseRequest();
     void parseStartLine(std::string& line);
     void parseHeader(std::string& header);
+};
+
+class Response {
+    void setMethod(const METHOD)
 };
 }
 

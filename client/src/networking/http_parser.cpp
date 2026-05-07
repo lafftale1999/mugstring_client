@@ -29,6 +29,22 @@ Request::Request(const std::vector<char>& rawRequest)
     parseRequest();
 }
 
+std::string Request::createRequest() {
+    std::stringstream ss;
+
+    ss << toString(method_) << " " << path_ << " " << "HTTP/" << version_ << "\r\n";
+    
+    for (const auto& h : headers_) {
+        ss << h.first << ": " << h.second << "\r\n";
+    }
+
+    ss << "\r\n";
+
+    ss << body_ << "\r\n";
+
+    return ss.str();
+}
+
 METHOD Request::getMethod() const {
     return method_;
 }
@@ -62,6 +78,10 @@ void Request::setMethod(const std::string& method) {
     }
 }
 
+void Request::setMethod(const METHOD method) {
+    method_ = std::move(method);
+}
+
 void Request::setPath(std::string path) {
     if (path.empty() || path.at(0) != '/') {
         throw std::runtime_error("Path is invalid");
@@ -83,6 +103,12 @@ void Request::setVersion(std::string version) {
 
 void Request::setHeader(std::string key, std::string value) {
     headers_[std::move(key)] = std::move(value);
+}
+
+void Request::addHeaders(std::initializer_list<std::pair<std::string, std::string>> headers) {
+    for (const auto& h : headers) {
+        setHeader(h.first, h.second);
+    }
 }
 
 void Request::setBody(const std::string& body) {
