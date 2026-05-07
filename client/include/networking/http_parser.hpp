@@ -1,0 +1,71 @@
+#ifndef LTALE_HTTP_PARSER_HPP_
+#define LTALE_HTTP_PARSER_HPP_
+
+#include <iostream>
+#include <vector>
+#include <string>
+#include <unordered_map>
+#include <cstdint>
+#include <sstream>
+
+namespace networking::http {
+
+using http_headers = std::unordered_map<std::string, std::string>; 
+
+enum class METHOD {
+    GET,
+    POST,
+    PUT,
+    DELETE
+};
+
+static inline const std::unordered_map<std::string_view, METHOD> methodMap = {
+    {"GET",     METHOD::GET},
+    {"POST",    METHOD::POST},
+    {"PUT",     METHOD::PUT},
+    {"DELETE",  METHOD::DELETE}
+};
+
+static inline const char* toString(const METHOD& m) {
+    switch (m) {
+        case METHOD::GET:       return "GET";
+        case METHOD::POST:      return "POST";
+        case METHOD::PUT:       return "PUT";
+        case METHOD::DELETE:    return "DELETE";
+        default: throw std::runtime_error("Invalid method");
+    }
+}
+
+class Request {
+public:
+    Request(const std::vector<char>& rawRequest);
+
+    METHOD getMethod() const;
+    const std::string& getPath() const;
+    const std::string& getVersion() const;
+    const http_headers& getHeaders() const;
+    const std::string& getBody() const;
+    const std::string& getRawRequest() const;
+
+    void setMethod(const std::string& method);
+    void setPath(std::string path);
+    void setVersion(std::string version);
+    void setHeader(std::string key, std::string value);
+    void setBody(const std::string& body);
+
+private:
+    METHOD              method_;
+    std::string         path_;
+    std::string         version_;
+    http_headers        headers_;
+    std::string         body_;
+
+    std::string         rawRequest_;
+    
+    void parseRequest();
+    void parseStartLine(std::string& line);
+    void parseHeader(std::string& header);
+};
+}
+
+#endif
