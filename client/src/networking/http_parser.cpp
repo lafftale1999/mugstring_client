@@ -29,7 +29,20 @@ Request::Request(const std::vector<char>& rawRequest)
     parseRequest();
 }
 
-std::string Request::createRequest() {
+Request::Request(
+    METHOD method, std::string path, std::string host,
+    std::initializer_list<std::pair<std::string, std::string>> headers,
+    std::string body)
+    {
+    setMethod(method);
+    setPath(path);
+    setVersion("1.1");
+    setHeader("Host", host);
+    addHeaders(headers);
+    setBody(body);
+}
+
+std::string Request::getRequest() {
     std::stringstream ss;
 
     ss << toString(method_) << " " << path_ << " " << "HTTP/" << version_ << "\r\n";

@@ -41,8 +41,13 @@ class Request {
 public:
     Request() = default;
     Request(const std::vector<char>& rawRequest);
+    Request(
+        METHOD method, std::string path, std::string host,
+        std::initializer_list<std::pair<std::string, std::string>> headers,
+        std::string body
+    );
 
-    std::string createRequest();
+    std::string getRequest();
 
     METHOD getMethod() const;
     const std::string& getPath() const;
@@ -74,7 +79,7 @@ private:
 };
 
 class Response {
-    void setMethod(const METHOD)
+    void setMethod(const METHOD m);
 };
 }
 
