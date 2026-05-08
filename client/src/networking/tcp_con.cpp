@@ -11,12 +11,12 @@ namespace networking::http::tcp {
 
 L_TCP_SOCKET_RES readData(int fd, byte_array& dataOut, size_t dataSize) {
     dataOut.clear();
-    std::array<char, TCP_BUFFER_SIZE> buff;
+    std::array<char, TCP_BUFFER_SIZE> buf;
     size_t totalBytesRead = 0;
 
     while (totalBytesRead < dataSize) {
-        size_t toRead = std::min(dataSize - totalBytesRead, buff.size());
-        ssize_t bytesRead = recv(fd, buff.data(), toRead, 0);
+        size_t toRead = std::min(dataSize - totalBytesRead, buf.size());
+        ssize_t bytesRead = recv(fd, buf.data(), toRead, 0);
 
         if (bytesRead == -1) {
             if (errno == EWOULDBLOCK || errno == EAGAIN) {
@@ -29,7 +29,7 @@ L_TCP_SOCKET_RES readData(int fd, byte_array& dataOut, size_t dataSize) {
             return L_TCP_SOCKET_RES::CLIENT_CON_CLOSED;
         }
 
-        dataOut.insert(dataOut.end(), buff.begin(), buff.begin() + bytesRead);
+        dataOut.insert(dataOut.end(), buf.begin(), buf.begin() + bytesRead);
         totalBytesRead += bytesRead;
     }
 
@@ -99,7 +99,7 @@ std::optional<Client> ServerCon::acceptConnection() {
     Client client = {
         .fd = clientSocket,
         .addr = clientAddress,
-        .buff = byte_array()
+        .buf = std::string()
     };
 
     return client;

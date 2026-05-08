@@ -82,7 +82,7 @@ private:
 class Request : public HttpMessageBase {
 public:
     Request() = default;
-    Request(const std::vector<char>& rawRequest);
+    Request(std::string rawRequest);
     Request(
         METHOD method, std::string path, std::string host,
         std::initializer_list<std::pair<std::string, std::string>> headers,
@@ -122,7 +122,8 @@ public:
 
     virtual ~Response() override;
 
-    std::string buildResponse();
+    std::string buildStringResponse();
+    std::vector<char> buildByteResponse();
 
     void setResponseCode(RESPONSE_CODE code);
     HttpResponseCode getResponseCode() const;

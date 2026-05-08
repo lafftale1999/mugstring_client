@@ -160,8 +160,8 @@ void HttpMessageBase::setBody(const std::string& body) {
  * ------------------------ REQUEST ---------------------------------------
  * ------------------------------------------------------------------------
  */
-Request::Request(const std::vector<char>& rawRequest) 
-: rawRequest_(rawRequest.begin(), rawRequest.end()) {
+Request::Request(std::string rawRequest) 
+: rawRequest_(std::move(rawRequest)) {
     if (rawRequest_.empty()) {
         throw std::runtime_error("The request is empty");
     }
@@ -297,7 +297,7 @@ Response::Response(
 
 Response::~Response() {}
 
-std::string Response::buildResponse() {
+std::string Response::buildStringResponse() {
     if (getBody().size() > 0) {
         if (getHeaders().find("Content-Type") == getHeaders().end()) {
             throw std::invalid_argument("Response has payload but no Content-Type");
@@ -314,9 +314,14 @@ std::string Response::buildResponse() {
     }
     ss << "\r\n";
 
-    ss << getBody() << "\r\n";
+    ss << getBody();
 
     return ss.str();
+}
+
+std::vector<char> Response::buildByteResponse() {
+    std::string response = buildStringResponse();
+    return std::vector<char>(response.begin(), response.end());
 }
 
 void Response::setResponseCode(RESPONSE_CODE code) {

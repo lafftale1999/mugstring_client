@@ -52,7 +52,7 @@ L_TCP_SOCKET_RES sendData(int fd, const byte_array& dataIn);
 struct Client {
     int             fd;
     sockaddr_in     addr;
-    byte_array      buff;
+    std::string     buf;
 };
 
 /**
