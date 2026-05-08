@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <map>
+#include <atomic>
 
 #include <poll.h>
 
@@ -15,8 +16,9 @@ static constexpr size_t INC_DATA_MAX_SIZE_BYTES = (2048 * 10);
 class Server {
 public:
     Server(int port, int maxCon);
+    ~Server();
 
-    void run();
+    void run(std::atomic<bool>& running);
 
 private:
     
