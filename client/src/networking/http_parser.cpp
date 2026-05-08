@@ -1,12 +1,21 @@
 #include "../../include/networking/http_parser.hpp"
+#include "../../include/networking/networking_config.hpp"
 
 #include <exception>
 #include <iterator>
 #include <string>
 #include <algorithm>
 #include <regex>
+#include <ctime>
 
 namespace networking::http {
+
+/**
+ * ------------------------------------------------------------------------
+ * ------------------------ STATIC FUNCS ----------------------------------
+ * ------------------------------------------------------------------------
+ */
+
 static void removeSpecialChar(std::string& s) {
     auto it = std::remove_if(s.begin(), s.end(), [](const auto& c){
         return c == '\n' || c == '\r';
@@ -18,7 +27,138 @@ static void removeSpecialChar(std::string& s) {
 }
 
 /**
+ * ------------------------------------------------------------------------
+ * ------------------------ HttpMethod ------------------------------------
+ * ------------------------------------------------------------------------
+ */
+
+static inline const std::unordered_map<std::string_view, METHOD> methods = {
+    {"GET",     METHOD::GET},
+    {"POST",    METHOD::POST},
+    {"PUT",     METHOD::PUT},
+    {"DELETE",  METHOD::DELETE}
+};
+
+HttpMethod::HttpMethod(METHOD m)
+: eMethod_(m), sMethod_("UNSET") {
+    sMethod_ = getMethodString();
+}
+
+HttpMethod::HttpMethod(std::string s)
+: eMethod_(METHOD::UNSET), sMethod_(s) {
+    eMethod_ = getMethodEnum();
+}
+
+METHOD HttpMethod::getMethodEnum() {
+    for (auto& [s, e] : methods) {
+        if (s == sMethod_) return e;
+    }
+
+    throw std::runtime_error("Unkown Method: " + sMethod_);
+}
+
+std::string HttpMethod::getMethodString() {
+    for (auto& [s, e] : methods) {
+        if (eMethod_ == e) return std::string(s);
+    }
+
+    throw std::runtime_error("Unable to find method string");
+}
+
+/**
+ * ------------------------------------------------------------------------
+ * ------------------------ RESPONSE CODE ---------------------------------
+ * ------------------------------------------------------------------------
+ */
+
+static inline const std::unordered_map<std::string_view, RESPONSE_CODE> responseCodes = {
+    {"OK",              RESPONSE_CODE::OK},
+    {"CREATED",         RESPONSE_CODE::CREATED},
+    {"BAD REQUEST",     RESPONSE_CODE::BAD_REQUEST},
+    {"UNAUTHORIZED",    RESPONSE_CODE::UNAUTHORIZED},
+    {"NOT FOUND",       RESPONSE_CODE::NOT_FOUND}
+};
+
+HttpResponseCode::HttpResponseCode(RESPONSE_CODE r)
+: eCode(r), sCode("UNSET") {
+    sCode = getMessageString();
+}
+
+HttpResponseCode::HttpResponseCode(std::string r) 
+: eCode(RESPONSE_CODE::UNSET), sCode(r) {
+    eCode = getCodeEnum();
+}
+
+RESPONSE_CODE HttpResponseCode::getCodeEnum() {
+    for (auto& [s, e] : responseCodes) {
+        if (sCode == s) return e;
+    }
+
+    throw std::runtime_error("Unkown Response Code: " + sCode);
+}
+
+std::string HttpResponseCode::getMessageString() {
+    for (auto& [s, e] : responseCodes) {
+        if (eCode == e) return std::string(s);
+    }
+
+    throw std::runtime_error("Unkown Response Code for string");
+}
+
+std::string HttpResponseCode::getCodeString() {
+    return std::to_string(static_cast<int>(eCode));
+}
+
+/**
+ * ------------------------------------------------------------------------
+ * ------------------------ HTTP BASE -------------------------------------
+ * ------------------------------------------------------------------------
+ */
+
+HttpMessageBase::~HttpMessageBase() {};
+
+const std::string& HttpMessageBase::getVersion() const {
+    return version_;
+}
+
+const http_headers& HttpMessageBase::getHeaders() const {
+    return headers_;
+}
+
+const std::string& HttpMessageBase::getBody() const {
+    return body_;
+}
+
+void HttpMessageBase::setVersion(std::string version) {
+    static const auto rVersion = std::regex(R"(\d\.\d)");
+    auto match = std::regex_match(version, rVersion);
+
+    if (!match) {
+        throw std::runtime_error("Version is invalid");
+    }
+
+    version_ = std::move(version);
+}
+
+void HttpMessageBase::setHeader(std::string key, std::string value) {
+    headers_[std::move(key)] = std::move(value);
+}
+
+void HttpMessageBase::addHeaders(std::initializer_list<std::pair<std::string, std::string>> headers) {
+    for (const auto& h : headers) {
+        setHeader(h.first, h.second);
+    }
+}
+
+void HttpMessageBase::setBody(const std::string& body) {
+    body_ = std::move(body); 
+}
+
+
+/**
+ * ------------------------------------------------------------------------
  * ------------------------ REQUEST ---------------------------------------
+ * ------------------------------------------------------------------------
  */
 Request::Request(const std::vector<char>& rawRequest) 
 : rawRequest_(rawRequest.begin(), rawRequest.end()) {
@@ -32,9 +172,8 @@ Request::Request(const std::vector<char>& rawRequest)
 Request::Request(
     METHOD method, std::string path, std::string host,
     std::initializer_list<std::pair<std::string, std::string>> headers,
-    std::string body)
+    std::string body) : method_(method)
     {
-    setMethod(method);
     setPath(path);
     setVersion("1.1");
     setHeader("Host", host);
@@ -42,40 +181,30 @@ Request::Request(
     setBody(body);
 }
 
+Request::~Request() {};
+
 std::string Request::getRequest() {
     std::stringstream ss;
 
-    ss << toString(method_) << " " << path_ << " " << "HTTP/" << version_ << "\r\n";
+    ss << method_.getMethodString() << " " << path_ << " " << "HTTP/" << getVersion() << "\r\n";
     
-    for (const auto& h : headers_) {
+    for (const auto& h : getHeaders()) {
         ss << h.first << ": " << h.second << "\r\n";
     }
 
     ss << "\r\n";
 
-    ss << body_ << "\r\n";
+    ss << getBody() << "\r\n";
 
     return ss.str();
 }
 
-METHOD Request::getMethod() const {
+HttpMethod Request::getMethod() const {
     return method_;
 }
 
 const std::string& Request::getPath() const {
     return path_;
-}
-
-const std::string& Request::getVersion() const {
-    return version_;
-}
-
-const http_headers& Request::getHeaders() const {
-    return headers_;
-}
-
-const std::string& Request::getBody() const {
-    return body_;
 }
 
 const std::string& Request::getRawRequest() const {
@@ -84,7 +213,7 @@ const std::string& Request::getRawRequest() const {
 
 void Request::setMethod(const std::string& method) {
     try {
-        method_ = methodMap.at(method);
+        method_ = HttpMethod(method);
     }
     catch (const std::exception& e) {
         throw std::runtime_error("Failed to set http method");
@@ -92,7 +221,7 @@ void Request::setMethod(const std::string& method) {
 }
 
 void Request::setMethod(const METHOD method) {
-    method_ = std::move(method);
+    method_ = std::move(HttpMethod(method));
 }
 
 void Request::setPath(std::string path) {
@@ -101,31 +230,6 @@ void Request::setPath(std::string path) {
     }
 
     path_ = std::move(path);
-}
-
-void Request::setVersion(std::string version) {
-    static const auto rVersion = std::regex(R"(\d\.\d)");
-    auto match = std::regex_match(version, rVersion);
-
-    if (!match) {
-        throw std::runtime_error("Version is invalid");
-    }
-
-    version_ = std::move(version);
-}
-
-void Request::setHeader(std::string key, std::string value) {
-    headers_[std::move(key)] = std::move(value);
-}
-
-void Request::addHeaders(std::initializer_list<std::pair<std::string, std::string>> headers) {
-    for (const auto& h : headers) {
-        setHeader(h.first, h.second);
-    }
-}
-
-void Request::setBody(const std::string& body) {
-    body_ = std::move(body); 
 }
 
 void Request::parseRequest() {
@@ -169,4 +273,71 @@ void Request::parseHeader(std::string& header) {
     
     setHeader(key, val);
 }
+
+/**
+ * ------------------------------------------------------------------------
+ * ------------------------ RESPONSE --------------------------------------
+ * ------------------------------------------------------------------------
+ */
+Response::Response() {
+    baseConfiguration();
 }
+
+Response::Response(
+    RESPONSE_CODE code,
+    std::initializer_list<std::pair<std::string, std::string>> headers,
+    std::string body
+) {
+    setResponseCode(code);
+    addHeaders(headers);
+    setBody(body);
+
+    baseConfiguration();
+}
+
+Response::~Response() {}
+
+std::string Response::buildResponse() {
+    if (getBody().size() > 0) {
+        if (getHeaders().find("Content-Type") == getHeaders().end()) {
+            throw std::invalid_argument("Response has payload but no Content-Type");
+        }
+        setHeader("Content-Length", std::to_string(getBody().size()));
+    }
+
+    std::stringstream ss;
+
+    ss << "HTTP/" << getVersion() << " " << getResponseCode().getCodeString() << " " << getResponseCode().getMessageString() << "\r\n";
+
+    for (const auto& [k, v] : getHeaders()) {
+        ss << k << ": " << v << "\r\n";
+    }
+    ss << "\r\n";
+
+    ss << getBody() << "\r\n";
+
+    return ss.str();
+}
+
+void Response::setResponseCode(RESPONSE_CODE code) {
+    responseCode_ = HttpResponseCode(code);
+}
+
+HttpResponseCode Response::getResponseCode() const {
+    return responseCode_;
+}
+
+void Response::baseConfiguration() {
+    setVersion("1.1");
+
+    setHeader("Server", LTALE_SERVER_NAME);
+
+    time_t timestamp = time(&timestamp);
+    struct tm datetime = *localtime(&timestamp);
+
+    std::string date = ctime(&timestamp);
+    date.pop_back();  // remove the '\n' ctime appends
+    setHeader("Date", std::move(date));
+}
+
+} // namespace end
