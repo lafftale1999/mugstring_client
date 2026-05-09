@@ -1,34 +1,121 @@
 #include <iostream>
+#include <fstream>
+#include <string>
+#include <iterator>
+#include <ctime>
 
-#include "include/http_server/tcp_con.hpp"
+#include <csignal>
+#include <atomic>
+
+#include "include/networking/tcp_con.hpp"
+#include "include/networking/http_parser.hpp"
+#include "include/networking/http_server.hpp"
+
+#define TEST_SERVER
+
+static std::atomic<bool> running = true;
+
+static void signalHandler(int) {
+    running = false;
+}
 
 int main(void) {
-    
-    networking::ServerCon server(8080, 20);
+#ifdef TEST_SERVER
+    std::signal(SIGINT, signalHandler);
+    std::signal(SIGTERM, signalHandler);
 
-    auto client = server.acceptConnection();
+    networking::http::Server server(8080, 20);
+    server.run(running);
 
-    if (client.has_value()) {
-        networking::tcp::byte_array data;
-        auto res = networking::tcp::readData(client->fd, data, 2000);
+#elif
+    std::ifstream file("request.txt");
 
-        if (res == networking::tcp::L_TCP_SOCKET_RES::SUCCESSFUL_READ ||
-            res == networking::tcp::L_TCP_SOCKET_RES::BLOCKING) {
-            std::cout << "Incoming data: ";
-            for (const char c : data) {
-                std::cout << c;
-            }
-            std::cout << '\n';
-        } else {
-            std::cerr << "Failed to read incoming request: " << (int)res << std::endl;
-            std::cerr << "Reason: " << strerror(errno) << std::endl;
-        }
-
-        res = client->sendData(data);
-        if (res != networking::tcp::L_TCP_SOCKET_RES::SUCCESSFUL_SEND) {
-            std::cerr << "Failed to send data\n";
-        }
+    if (!file.is_open()) {
+        throw std::runtime_error("Unable to open file");
     }
 
+    std::string raw_request {
+        std::istreambuf_iterator<char>(file),
+        std::istreambuf_iterator<char>()
+    };
+
+    std::cout << "----------------------------------------\n";
+    std::cout << "Parsed" << std::endl;
+
+    networking::http::Request request(raw_request);
+
+    std::cout << "Method: " << request.getMethod().getMethodString() << std::endl;
+    std::cout << "Path: " << request.getPath() << std::endl;
+    std::cout << "Version: " << request.getVersion() << std::endl;
+
+    for (const auto& h : request.getHeaders()) {
+        std::cout << h.first << " : " << h.second << std::endl;
+    }
+
+    std::cout << "Body:\n" << request.getBody() << std::endl;
+
+    std::cout << "----------------------------------------\n";
+
+    std::cout << "TIME TEST" << std::endl;
+    time_t timestamp = time(&timestamp);
+    struct tm datetime = *localtime(&timestamp);
+
+    std::cout << ctime(&timestamp);
+
+    std::cout << "----------------------------------------\n";
+    std::cout << "------------ RESPONSE ------------------\n";
+    std::cout << "----------------------------------------\n";
+
+    networking::http::Response response;
+    response.setBody("Hello World");
+    response.setHeader("Content-Type", "application/text");
+    response.setResponseCode(networking::http::RESPONSE_CODE::OK);
+
+    std::cout << response.buildStringResponse() << std::endl;std::ifstream file("request.txt");
+
+    if (!file.is_open()) {
+        throw std::runtime_error("Unable to open file");
+    }
+
+    std::string raw_request {
+        std::istreambuf_iterator<char>(file),
+        std::istreambuf_iterator<char>()
+    };
+
+    std::cout << "----------------------------------------\n";
+    std::cout << "Parsed" << std::endl;
+
+    networking::http::Request request(raw_request);
+
+    std::cout << "Method: " << request.getMethod().getMethodString() << std::endl;
+    std::cout << "Path: " << request.getPath() << std::endl;
+    std::cout << "Version: " << request.getVersion() << std::endl;
+
+    for (const auto& h : request.getHeaders()) {
+        std::cout << h.first << " : " << h.second << std::endl;
+    }
+
+    std::cout << "Body:\n" << request.getBody() << std::endl;
+
+    std::cout << "----------------------------------------\n";
+
+    std::cout << "TIME TEST" << std::endl;
+    time_t timestamp = time(&timestamp);
+    struct tm datetime = *localtime(&timestamp);
+
+    std::cout << ctime(&timestamp);
+
+    std::cout << "----------------------------------------\n";
+    std::cout << "------------ RESPONSE ------------------\n";
+    std::cout << "----------------------------------------\n";
+
+    networking::http::Response response;
+    response.setBody("Hello World");
+    response.setHeader("Content-Type", "application/text");
+    response.setResponseCode(networking::http::RESPONSE_CODE::OK);
+
+    std::cout << response.buildStringResponse() << std::endl;
+#endif
+    
     return 0;
 }
