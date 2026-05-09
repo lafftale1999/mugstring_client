@@ -3,7 +3,7 @@ PROG   = mugstring_client
 DST	   = ../filesystem-overlay/usr/local/sbin/
 # CC     = arm-linux-gnueabihf-g++
 CC	   = g++
-CFLAGS = -g -std=c++17 -Wall -Werror
+CFLAGS = -g -std=c++17 -Wall
 LIBS   =
 
 # Setting up the src and object paths
