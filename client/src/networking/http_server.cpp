@@ -68,6 +68,11 @@ namespace networking::http {
             return;
         }
 
+        if (res == tcp::L_TCP_SOCKET_RES::BUFFER_FULL) {
+            client.buf.clear();
+            // Send error message 413
+        }
+        
         client.buf.append(std::move(std::string(buf.begin(), buf.end())));
         
         // Check if we've received all headers
@@ -79,14 +84,18 @@ namespace networking::http {
         static const std::string_view clString = "Content-Length:";
         auto contentLengthPos = client.buf.find(clString);
         if (contentLengthPos != std::string::npos &&
-            contentLengthPos < headerEnd) {
-                auto valStart = contentLengthPos + clString.size();
-                auto valEnd = client.buf.find("\r\n", valStart);
-                size_t contentLength = std::stoi(client.buf.substr(valStart, valEnd - valStart));
-                
-                // Check if body is complete
-                if (client.buf.size() < headerEnd + headerEndDelim.size() + contentLength) return;
-            }
+            contentLengthPos < headerEnd)
+            {
+            auto valStart = contentLengthPos + clString.size();
+            auto valEnd = client.buf.find("\r\n", valStart);
+            size_t contentLength = std::stoi(client.buf.substr(valStart, valEnd - valStart));
+            
+            // Check if body is complete
+            if (client.buf.size() < headerEnd + headerEndDelim.size() + contentLength) return;
+        } else {
+            client.buf.clear();
+            // Send error message 413
+        }
 
         // Complete request received
         Request request(client.buf);

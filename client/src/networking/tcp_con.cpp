@@ -14,6 +14,8 @@ L_TCP_SOCKET_RES readData(int fd, byte_array& dataOut, size_t dataSize) {
     std::array<char, TCP_BUFFER_SIZE> buf;
     size_t totalBytesRead = 0;
 
+    if (dataSize == 0) return L_TCP_SOCKET_RES::BUFFER_FULL;
+    
     while (totalBytesRead < dataSize) {
         size_t toRead = std::min(dataSize - totalBytesRead, buf.size());
         ssize_t bytesRead = recv(fd, buf.data(), toRead, 0);
