@@ -15,4 +15,9 @@
 #define LTALE_HTTP_BODY_MAX_SIZE_BYTES      
 
 
+/**
+ * Resource specific configurations
+ */
+#define LTALE_HTTP_SERVER_RESOURCE_PATH     "resources"
+
 #endif

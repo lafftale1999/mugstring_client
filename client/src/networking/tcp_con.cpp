@@ -9,7 +9,7 @@
 
 namespace networking::http::tcp {
 
-L_TCP_SOCKET_RES readData(int fd, byte_array& dataOut, size_t dataSize) {
+L_TCP_SOCKET_RES readData(int fd, std::string& dataOut, size_t dataSize) {
     dataOut.clear();
     std::array<char, TCP_BUFFER_SIZE> buf;
     size_t totalBytesRead = 0;
@@ -31,14 +31,15 @@ L_TCP_SOCKET_RES readData(int fd, byte_array& dataOut, size_t dataSize) {
             return L_TCP_SOCKET_RES::CLIENT_CON_CLOSED;
         }
 
-        dataOut.insert(dataOut.end(), buf.begin(), buf.begin() + bytesRead);
+        dataOut.append(buf.begin(), buf.begin() + bytesRead);
+        // dataOut.insert(dataOut.end(), buf.begin(), buf.begin() + bytesRead);
         totalBytesRead += bytesRead;
     }
 
     return L_TCP_SOCKET_RES::SUCCESSFUL_READ;
 }
 
-L_TCP_SOCKET_RES sendData(int fd, const byte_array& dataIn) {
+L_TCP_SOCKET_RES sendData(int fd, const std::string& dataIn) {
     const char* pos = dataIn.data();
     size_t toSend = dataIn.size();
     size_t totalBytesSent = 0;

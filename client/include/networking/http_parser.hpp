@@ -35,14 +35,15 @@ private:
     std::string     sMethod_;
 };
 
-enum class RESPONSE_CODE {
+enum class RESPONSE_CODE : uint16_t {
     UNSET               = 0,
     OK                  = 200,
     CREATED             = 201,
     BAD_REQUEST         = 400,
     UNAUTHORIZED        = 401,
     NOT_FOUND           = 404,
-    CONTENT_TOO_LARGE   = 413
+    CONTENT_TOO_LARGE   = 413,
+    NOT_ACCEPTABLE      = 406
 };
 
 class HttpResponseCode {
@@ -102,6 +103,9 @@ public:
     void setMethod(const METHOD method);
     void setPath(std::string path);
 
+    static uint16_t headersReceived(std::string_view data, std::size_t& pos);
+    static uint16_t bodyReceived(std::string_view data, std::size_t& pos);
+
 private:
     HttpMethod          method_;
     std::string         path_;
@@ -123,8 +127,7 @@ public:
 
     virtual ~Response() override;
 
-    std::string buildStringResponse();
-    std::vector<char> buildByteResponse();
+    std::string buildResponse();
 
     void setResponseCode(RESPONSE_CODE code);
     HttpResponseCode getResponseCode() const;

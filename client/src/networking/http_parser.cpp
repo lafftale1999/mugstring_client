@@ -77,7 +77,8 @@ static inline const std::unordered_map<std::string_view, RESPONSE_CODE> response
     {"BAD REQUEST",         RESPONSE_CODE::BAD_REQUEST},
     {"UNAUTHORIZED",        RESPONSE_CODE::UNAUTHORIZED},
     {"NOT FOUND",           RESPONSE_CODE::NOT_FOUND},
-    {"CONTENT_TOO_LARGE",   RESPONSE_CODE::CONTENT_TOO_LARGE}
+    {"CONTENT_TOO_LARGE",   RESPONSE_CODE::CONTENT_TOO_LARGE},
+    {"NOT ACCEPTABLE",      RESPONSE_CODE::NOT_ACCEPTABLE}
 };
 
 HttpResponseCode::HttpResponseCode(RESPONSE_CODE r)
@@ -249,6 +250,35 @@ void Request::parseRequest() {
     setBody(buf);
 }
 
+static constexpr std::string_view headerEndDelim    = "\r\n\r\n";
+static const std::string_view clString              = "Content-Length:";
+
+uint16_t Request::headersReceived(std::string_view data, std::size_t& headerPos) {
+    headerPos = data.find(headerEndDelim);
+    if (headerPos == std::string::npos) return 1;
+
+    return 0;
+}
+
+uint16_t Request::bodyReceived(std::string_view data, std::size_t& headerPos) {
+    auto clPos = data.find(clString);
+    if (clPos != std::string::npos && clPos < headerPos) {
+        auto valStart = clPos + clString.size();
+        auto valEnd = data.find("\r\n", valStart);
+        size_t contentLength = std::stoi(std::string(data.substr(valStart, valEnd - valStart)));
+        
+        // Check if body is complete
+        if (data.size() < headerPos + headerEndDelim.size() + contentLength) return 1; // not complete;
+        if (data.size() > headerPos + headerEndDelim.size() + contentLength) {
+            return 413; // message bigger than assigned in contentlength
+        }
+    } else if (clPos != std::string::npos) {
+        return 406; // content length assigned outside of headers
+    }
+
+    return 0;
+}
+
 void Request::parseStartLine(std::string& line) {
     removeSpecialChar(line);
     std::stringstream ss(line);
@@ -298,7 +328,7 @@ Response::Response(
 
 Response::~Response() {}
 
-std::string Response::buildStringResponse() {
+std::string Response::buildResponse() {
     if (getBody().size() > 0) {
         if (getHeaders().find("Content-Type") == getHeaders().end()) {
             throw std::invalid_argument("Response has payload but no Content-Type");
@@ -318,11 +348,6 @@ std::string Response::buildStringResponse() {
     ss << getBody();
 
     return ss.str();
-}
-
-std::vector<char> Response::buildByteResponse() {
-    std::string response = buildStringResponse();
-    return std::vector<char>(response.begin(), response.end());
 }
 
 void Response::setResponseCode(RESPONSE_CODE code) {

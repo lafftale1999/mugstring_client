@@ -59,9 +59,8 @@ namespace networking::http {
 
     void Server::handleRequest(int fd, size_t& index) {
         auto& client = clients_[fd];
-        tcp::byte_array buf;
 
-        auto res = tcp::readData(fd, buf, INC_DATA_MAX_SIZE_BYTES - client.buf.size());
+        auto res = tcp::readData(fd, client.buf, INC_DATA_MAX_SIZE_BYTES - client.buf.size());
 
         if (res == tcp::L_TCP_SOCKET_RES::CLIENT_CON_CLOSED) {
             closeConnection(fd, index);
@@ -70,34 +69,25 @@ namespace networking::http {
 
         if (res == tcp::L_TCP_SOCKET_RES::BUFFER_FULL) {
             client.buf.clear();
-            // Send error message 413
+            Response response(RESPONSE_CODE::CONTENT_TOO_LARGE, {}, {});
+            return;
         }
         
-        client.buf.append(std::move(std::string(buf.begin(), buf.end())));
-        
         // Check if we've received all headers
-        static const std::string_view headerEndDelim("\r\n\r\n");
-        auto headerEnd = client.buf.find(headerEndDelim);
-        if (headerEnd == std::string::npos) return;
+        std::size_t hPos = 0;
+        if (Request::headersReceived(client.buf, hPos) != 0) return;
 
-        // Check if we've received the body
-        static const std::string_view clString = "Content-Length:";
-        auto contentLengthPos = client.buf.find(clString);
-        if (contentLengthPos != std::string::npos &&
-            contentLengthPos < headerEnd)
-            {
-            auto valStart = contentLengthPos + clString.size();
-            auto valEnd = client.buf.find("\r\n", valStart);
-            size_t contentLength = std::stoi(client.buf.substr(valStart, valEnd - valStart));
-            
-            // Check if body is complete
-            if (client.buf.size() < headerEnd + headerEndDelim.size() + contentLength) return;
-        } else {
+        uint16_t err = Request::bodyReceived(client.buf, hPos);
+        if (err == 1) return; // body incomplete
+        else if (err >= 100) {
             client.buf.clear();
-            // Send error message 413
+            Response response(static_cast<RESPONSE_CODE>(err), {}, {});
+            tcp::sendData(fd, response.buildResponse());
+            return; // Request denied
         }
 
         // Complete request received
+        // requestHandler()
         Request request(client.buf);
         
         client.buf.clear();
@@ -107,7 +97,7 @@ namespace networking::http {
         response.setResponseCode(RESPONSE_CODE::OK);
         response.setBody("Hello world");
 
-        tcp::sendData(fd, response.buildByteResponse());
+        tcp::sendData(fd, response.buildResponse());
     }
 
     void Server::closeConnection(int fd, size_t& index) {

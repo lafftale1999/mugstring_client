@@ -18,8 +18,6 @@ namespace networking::http::tcp {
 
 static constexpr size_t TCP_BUFFER_SIZE = 2048;
 
-using byte_array = std::vector<char>;
-
 enum class L_TCP_SOCKET_RES {
     SUCCESSFUL_READ,
     SUCCESSFUL_SEND,
@@ -39,7 +37,7 @@ enum class L_TCP_SOCKET_RES {
  * 
  * @return L_TCP_SOCKET_RES
  */
-L_TCP_SOCKET_RES readData(int fd, byte_array& dataOut, size_t dataSize);
+L_TCP_SOCKET_RES readData(int fd, std::string& dataOut, size_t dataSize);
 
 /**
  * Sends all of dataIn through the socket.
@@ -48,7 +46,7 @@ L_TCP_SOCKET_RES readData(int fd, byte_array& dataOut, size_t dataSize);
  * @param dataIn byte_array of data to be sent
  * @return L_TCP_SOCKET_RES
  */
-L_TCP_SOCKET_RES sendData(int fd, const byte_array& dataIn);
+L_TCP_SOCKET_RES sendData(int fd, const std::string& dataIn);
 
 struct Client {
     int             fd;
