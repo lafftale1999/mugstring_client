@@ -36,12 +36,13 @@ private:
 };
 
 enum class RESPONSE_CODE {
-    UNSET           = 0,
-    OK              = 200,
-    CREATED         = 201,
-    BAD_REQUEST     = 400,
-    UNAUTHORIZED    = 401,
-    NOT_FOUND       = 404
+    UNSET               = 0,
+    OK                  = 200,
+    CREATED             = 201,
+    BAD_REQUEST         = 400,
+    UNAUTHORIZED        = 401,
+    NOT_FOUND           = 404,
+    CONTENT_TOO_LARGE   = 413
 };
 
 class HttpResponseCode {

@@ -72,11 +72,12 @@ std::string HttpMethod::getMethodString() {
  */
 
 static inline const std::unordered_map<std::string_view, RESPONSE_CODE> responseCodes = {
-    {"OK",              RESPONSE_CODE::OK},
-    {"CREATED",         RESPONSE_CODE::CREATED},
-    {"BAD REQUEST",     RESPONSE_CODE::BAD_REQUEST},
-    {"UNAUTHORIZED",    RESPONSE_CODE::UNAUTHORIZED},
-    {"NOT FOUND",       RESPONSE_CODE::NOT_FOUND}
+    {"OK",                  RESPONSE_CODE::OK},
+    {"CREATED",             RESPONSE_CODE::CREATED},
+    {"BAD REQUEST",         RESPONSE_CODE::BAD_REQUEST},
+    {"UNAUTHORIZED",        RESPONSE_CODE::UNAUTHORIZED},
+    {"NOT FOUND",           RESPONSE_CODE::NOT_FOUND},
+    {"CONTENT_TOO_LARGE",   RESPONSE_CODE::CONTENT_TOO_LARGE}
 };
 
 HttpResponseCode::HttpResponseCode(RESPONSE_CODE r)
