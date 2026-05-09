@@ -72,13 +72,14 @@ std::string HttpMethod::getMethodString() {
  */
 
 static inline const std::unordered_map<std::string_view, RESPONSE_CODE> responseCodes = {
-    {"OK",                  RESPONSE_CODE::OK},
-    {"CREATED",             RESPONSE_CODE::CREATED},
-    {"BAD REQUEST",         RESPONSE_CODE::BAD_REQUEST},
-    {"UNAUTHORIZED",        RESPONSE_CODE::UNAUTHORIZED},
-    {"NOT FOUND",           RESPONSE_CODE::NOT_FOUND},
-    {"CONTENT_TOO_LARGE",   RESPONSE_CODE::CONTENT_TOO_LARGE},
-    {"NOT ACCEPTABLE",      RESPONSE_CODE::NOT_ACCEPTABLE}
+    {"OK",                      RESPONSE_CODE::OK},
+    {"CREATED",                 RESPONSE_CODE::CREATED},
+    {"BAD REQUEST",             RESPONSE_CODE::BAD_REQUEST},
+    {"UNAUTHORIZED",            RESPONSE_CODE::UNAUTHORIZED},
+    {"NOT FOUND",               RESPONSE_CODE::NOT_FOUND},
+    {"CONTENT_TOO_LARGE",       RESPONSE_CODE::CONTENT_TOO_LARGE},
+    {"NOT ACCEPTABLE",          RESPONSE_CODE::NOT_ACCEPTABLE},
+    {"INTERNAL_SERVER_ERROR",   RESPONSE_CODE::INTERNAL_SERVER_ERROR}
 };
 
 HttpResponseCode::HttpResponseCode(RESPONSE_CODE r)
@@ -333,8 +334,8 @@ std::string Response::buildResponse() {
         if (getHeaders().find("Content-Type") == getHeaders().end()) {
             throw std::invalid_argument("Response has payload but no Content-Type");
         }
-        setHeader("Content-Length", std::to_string(getBody().size()));
     }
+    setHeader("Content-Length", std::to_string(getBody().size()));
 
     std::stringstream ss;
 

@@ -3,6 +3,7 @@
 #include <exception>
 
 #include "../../include/networking/http_parser.hpp"
+#include "../../include/networking/http_router.hpp"
 
 namespace networking::http {
     Server::Server(int port, int maxCon)
@@ -87,16 +88,9 @@ namespace networking::http {
         }
 
         // Complete request received
-        // requestHandler()
         Request request(client.buf);
-        
         client.buf.clear();
-
-        Response response;
-        response.setHeader("Content-Type", "application/text");
-        response.setResponseCode(RESPONSE_CODE::OK);
-        response.setBody("Hello world");
-
+        Response response = router_.handleRequest(request);
         tcp::sendData(fd, response.buildResponse());
     }
 

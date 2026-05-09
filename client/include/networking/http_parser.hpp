@@ -36,14 +36,15 @@ private:
 };
 
 enum class RESPONSE_CODE : uint16_t {
-    UNSET               = 0,
-    OK                  = 200,
-    CREATED             = 201,
-    BAD_REQUEST         = 400,
-    UNAUTHORIZED        = 401,
-    NOT_FOUND           = 404,
-    CONTENT_TOO_LARGE   = 413,
-    NOT_ACCEPTABLE      = 406
+    UNSET                       = 0,
+    OK                          = 200,
+    CREATED                     = 201,
+    BAD_REQUEST                 = 400,
+    UNAUTHORIZED                = 401,
+    NOT_FOUND                   = 404,
+    CONTENT_TOO_LARGE           = 413,
+    NOT_ACCEPTABLE              = 406,
+    INTERNAL_SERVER_ERROR       = 500
 };
 
 class HttpResponseCode {

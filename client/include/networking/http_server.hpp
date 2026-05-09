@@ -2,6 +2,7 @@
 #define LTALE_HTTP_SERVER_HPP_
 
 #include "tcp_con.hpp"
+#include "http_router.hpp"
 
 #include <iostream>
 #include <map>
@@ -25,7 +26,8 @@ private:
     tcp::ServerCon              serverCon_;
     std::vector<pollfd>         pfds_;
     std::map<int, tcp::Client>  clients_;
-    
+    HttpRouter                  router_;
+
     void incomingConnection();
     void handleRequest(int fd, size_t& index);
     void closeConnection(int fd, size_t& index);
