@@ -1,0 +1,41 @@
+#!/bin/sh
+
+FILE_NAME=mugstring_client
+BIN_FILE=/usr/local/sbin/${FILE_NAME}
+PID_FILE=/var/run/${FILE_NAME}.pid
+
+start() {
+    start-stop-daemon --start --oknodo --user root --name $FILE_NAME --pidfile $PID_FILE --make-pidfile --background --exec $BIN_FILE
+
+    PROC=$( cat $PID_FILE )
+    PROC="/proc/${PROC}"
+
+    if [ -e "$PID_FILE" ] && [ -e "$PROC" ]
+    then
+        echo "${FILE_NAME} started successfully"
+    else
+        echo "Failed to start ${FILE_NAME}"
+        exit 1
+    fi
+}
+
+stop() {
+    start-stop-daemon --stop --oknodo --user root --name $FILE_NAME --pidfile $PID_FILE --retry 5
+    
+    echo "${FILE_NAME} stopped"
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+    echo "Usage: $0 {start|stop|restart}"
+esac

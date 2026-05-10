@@ -18,6 +18,6 @@
 /**
  * Resource specific configurations
  */
-#define LTALE_HTTP_SERVER_RESOURCE_PATH     "resources"
+#define LTALE_HTTP_SERVER_RESOURCE_PATH     "/usr/local/sbin/resources"
 
 #endif

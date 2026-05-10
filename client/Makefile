@@ -1,10 +1,11 @@
 # Setting up our compiler flags and destinations
 PROG   = mugstring_client
 DST	   = ../filesystem-overlay/usr/local/sbin/
-# CC     = arm-linux-gnueabihf-g++
-CC	   = g++
+CC     = arm-linux-gnueabihf-g++
+# CC	   = g++
 CFLAGS = -g -std=c++17 -Wall
 LIBS   =
+RES	   = ./resources
 
 # Setting up the src and object paths
 ROOT_SRC  = $(wildcard *.cpp)                        # all .cpp files in root
@@ -22,6 +23,7 @@ OBJ      = $(ROOT_OBJ) $(SRC_OBJ)
 # --- default target ---
 all: $(PROG)
 	cp $(PROG) $(DST)
+	cp -r $(RES) $(DST)
 
 # --- link ---
 # Explains to the compiler that all .o files in these
